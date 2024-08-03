@@ -29,6 +29,8 @@ const style = {
   gap: 3,
 }
 
+//global inventory list for search query purposes
+var allItems = []
 
 export default function InvList({listName}) {
   //State variables:
@@ -135,8 +137,10 @@ export default function InvList({listName}) {
       Add New Item
     </Button>
     <Box 
+      id="list"
       border={'1px solid #333'}
-      width='25vw'
+      width ={{ xs: "80%", sm: "25vw"}}
+
       height='25vh'
     >
       <Box

@@ -1,56 +1,51 @@
 'use client';
 import InvList from "./invlist";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { firestore } from "./firebase";
-import { Box, Stack, Typography, Button, Modal, TextField, Container, Item, ImageList } from "@mui/material";
-import {
-  collection,
-  doc,
-  getDocs,
-  query,
-  setDoc,
-  deleteDoc,
-  getDoc,
-} from 'firebase/firestore'
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { Box, Stack, TextField, Button, ImageList, useMediaQuery } from "@mui/material";
+import { collection, getDocs, query, setDoc, deleteDoc, doc } from 'firebase/firestore';
 
+const theme = createTheme();
 
 export default function Home() {
   //State variables:
-  const [collections, setCollection] = useState([])
-  const [open, setOpen] = useState(false)
-  const [listName, setListName] = useState('')
+  const [collections, setCollection] = useState([]);
+  const [listName, setListName] = useState(''); // List to be added
+  const [searchQuery, setSearchQuery] = useState(''); // State for search query
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm')); // To set breakpoints for smaller screens aka converts grid into stack
+  const listRefs = useRef({}); // Reference for lists
 
-  //**Functions:
-
-  //Updates the list of collections (lists) as user creates new ones
+  // Updates the list of collections (lists) as user creates new ones
   const updateCollections = async () => {
-    const snapshot = query(collection(firestore, 'listOfCollections'))
-    const cols = await getDocs(snapshot)
-    const collectionList = []
+    const snapshot = query(collection(firestore, 'listOfCollections'));
+    const cols = await getDocs(snapshot);
+    const collectionList = [];
     cols.forEach((doc) => {
-      collectionList.push({ name: doc.id })
-    })
-    setCollection(collectionList) //set state with all collections
-  }
+      collectionList.push({ name: doc.id });
+    });
+    setCollection(collectionList); // set state with all collections
+  };
 
   useEffect(() => {
     updateCollections();
-    console.log("collection updated")
-  }, [])
+    console.log("collection updated");
+  }, []);
 
   const addCollection = async (name) => {
-    //save the new collection into the list of collections
+    // Save the new collection into the list of collections
     await setDoc(doc(firestore, "listOfCollections", name), {});
-    //save the collection into the actual database
+    // Save the collection into the actual database
     await setDoc(doc(firestore, name, 'placeholder'), { quantity: 1 });
-    await updateCollections()
-  }
+    await updateCollections();
+  };
 
-  //To remove collection, retrieve all items and delete them
+  // To remove collection, retrieve all items and delete them
   const removeCollection = async (listName) => {
-    const collectionRef = query(collection(firestore, listName))
-    const collItems = await getDocs(collectionRef)
-    //delete all items from collection
+    const collectionRef = query(collection(firestore, listName));
+    const collItems = await getDocs(collectionRef);
+    // Delete all items from collection
     for (const listItem of collItems.docs) {
       try {
         await deleteDoc(doc(firestore, listName, listItem.id));
@@ -58,67 +53,121 @@ export default function Home() {
         console.log(e);
       }
     }
-    //delete collection name from listOfCollections
-    await deleteDoc(doc(firestore, "listOfCollections", listName))
-    await updateCollections()
-  }
+    // Delete collection name from listOfCollections
+    await deleteDoc(doc(firestore, "listOfCollections", listName));
+    await updateCollections();
+  };
 
-  const handleOpen = () => setOpen(true)
-  const handleClose = () => setOpen(false)
+  // Filter collections based on search query
+  const filteredCollections = collections.filter(collection =>
+    collection.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  //************************************************************************ */
-  return (
-    <Box
-      id="whole-page"
-      width="100vw"
-      height="100vh"
-      display={'flex'}
-      justifyContent={'center'}
-      flexDirection={'column'}
-      alignItems={'center'}
-      gap={2}
-    >
-      {collections.length > 3 ?
-        <ImageList sx={{ margin: 'auto' }} variant="quilted" cols={3} gap={8}>
-          {collections.map((list) => (<InvList key={list.name} listName={list.name} />))}
-        </ImageList>
-        :
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 1, sm: 2, md: 4 }}>
-          {collections.map((list) => (<InvList key={list.name} listName={list.name} />))}
-        </Stack>
+  // Scroll to the list containing the searched task
+  const handleSearch = async (input) => {
+    setSearchQuery(input);
+
+    for (const coll of collections) {
+      const collectionRef = query(collection(firestore, coll.name));
+      const collItems = await getDocs(collectionRef);
+
+      for (const listItem of collItems.docs) {
+        if (listItem.id.toLowerCase().includes(input.toLowerCase())) {
+          const listRef = listRefs.current[collection.name];
+          if (listRef) {
+            listRef.scrollIntoView({ behavior: 'smooth' });
+            return;
+          }
+        }
       }
+    }
+  };
 
-
-
-      <Stack id="input-form" width="50%" direction={'row'} spacing={2}>
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Box
+        id="whole-page"
+        width="100vw"
+        height="100vh"
+        display={'flex'}
+        justifyContent={'center'}
+        flexDirection={'column'}
+        alignItems={'center'}
+        gap={2}
+      >
+        {/* Search Input */}
         <TextField
-          id="outlined-basic"
-          label="List name"
+          id="search-input"
+          label="Search Tasks"
           variant="outlined"
           fullWidth
-          value={listName}
-          onChange={(e) => setListName(e.target.value)}
+          value={searchQuery}
+          onChange={(e) => handleSearch(e.target.value)}
+          sx={{ maxWidth: '80%', marginBottom: 2 }}
         />
-        <Button
-          variant="outlined"
-          onClick={async () => {
-            await addCollection(listName)
-            setListName('')
-          }}
-        >
-          Add
-        </Button>
-        <Button
-          variant="outlined"
-          onClick={async () => {
-            await removeCollection(listName)
-            setListName('')
-          }}
-        >
-          Delete
-        </Button>
-      </Stack>
-    </Box>
+
+        {filteredCollections.length > 3 ? (
+          isSmallScreen ? (
+            <Stack id="thin-stack" sx={{ width: '80vw', maxHeight: '80%' }} overflow={'auto'} direction="column" spacing={2}>
+              {filteredCollections.map((list) => (
+                <Box ref={el => listRefs.current[list.name] = el} key={list.name}>
+                  <InvList id={list.name} key={list.name} listName={list.name} />
+                </Box>
+              ))}
+            </Stack>
+          ) : (
+            <ImageList id="grid" sx={{ margin: 'auto' }} width="80%" variant="quilted" cols={3} gap={8}>
+              {filteredCollections.map((list) => (
+                <Box ref={el => listRefs.current[list.name] = el} key={list.name}>
+                  <InvList key={list.name} listName={list.name} />
+                </Box>
+              ))}
+            </ImageList>
+          )
+        ) : (
+          <Stack id="medium-stack" direction={{ xs: 'column', sm: 'row' }} sx={{ width: '80vw', maxHeight: '80%' }} overflow={'auto'} spacing={{ xs: 1, sm: 2, md: 4 }}>
+            {filteredCollections.map((list) => (
+              <Box ref={el => listRefs.current[list.name] = el} key={list.name}>
+                <InvList key={list.name} listName={list.name} />
+              </Box>
+            ))}
+          </Stack>
+        )}
+
+        <Stack id="input-form" width="50%" direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+          <TextField
+            id="outlined-basic"
+            label="List name"
+            variant="outlined"
+            fullWidth
+            value={listName}
+            onChange={(e) => setListName(e.target.value)}
+          />
+          <Stack direction={'row'}>
+            <Button
+              sx={{ width: "50%" }}
+              variant="outlined"
+              onClick={async () => {
+                await addCollection(listName);
+                setListName('');
+              }}
+            >
+              Add
+            </Button>
+            <Button
+              sx={{ width: "50%" }}
+              variant="outlined"
+              onClick={async () => {
+                await removeCollection(listName);
+                setListName('');
+              }}
+            >
+              Delete
+            </Button>
+          </Stack>
+        </Stack>
+      </Box>
+    </ThemeProvider>
   );
 }
-
