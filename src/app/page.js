@@ -1,10 +1,11 @@
 'use client';
 import InvList from "./invlist";
+import SideDrawer from "./sidedrawer.js"
 import { useState, useEffect, useRef } from "react";
 import { firestore } from "./firebase";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { Box, Stack, TextField, Button, ImageList, useMediaQuery } from "@mui/material";
+import { Box, Stack, TextField, Button, ImageList, useMediaQuery, AppBar, Container, Toolbar } from "@mui/material";
 import { collection, getDocs, query, setDoc, deleteDoc, doc } from 'firebase/firestore';
 
 const theme = createTheme();
@@ -63,7 +64,7 @@ export default function Home() {
     collection.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Scroll to the list containing the searched task
+  // Scroll to the list containing the searched list
   const handleSearch = async (input) => {
     setSearchQuery(input);
 
@@ -73,7 +74,7 @@ export default function Home() {
 
       for (const listItem of collItems.docs) {
         if (listItem.id.toLowerCase().includes(input.toLowerCase())) {
-          const listRef = listRefs.current[collection.name];
+          const listRef = listRefs.current[coll.name];
           if (listRef) {
             listRef.scrollIntoView({ behavior: 'smooth' });
             return;
@@ -82,30 +83,43 @@ export default function Home() {
       }
     }
   };
-
+  //************************************************************************** */
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <Box id="outer-page" height={'90vh'}>
+      <AppBar sx={{ backgroundColor: "gray", mb:3}} position="static">
+          <Toolbar display={'flex'}
+            justifyContent={'center'}
+            flexDirection={'column'}
+            alignItems={'center'}
+            >
+            <SideDrawer />
+            {/* Search Input */}
+            <TextField
+              id="search-input"
+              label="Search Lists"
+              variant="outlined"
+              fullWidth
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              sx={{ maxWidth: '80%', margin: 2, backgroundColor: "white" }}
+            />
+          </Toolbar>
+
+        </AppBar>
       <Box
         id="whole-page"
-        width="100vw"
-        height="100vh"
+        width="100%"
+        height="90%"
         display={'flex'}
         justifyContent={'center'}
         flexDirection={'column'}
         alignItems={'center'}
         gap={2}
       >
-        {/* Search Input */}
-        <TextField
-          id="search-input"
-          label="Search Tasks"
-          variant="outlined"
-          fullWidth
-          value={searchQuery}
-          onChange={(e) => handleSearch(e.target.value)}
-          sx={{ maxWidth: '80%', marginBottom: 2 }}
-        />
+        
+
 
         {filteredCollections.length > 3 ? (
           isSmallScreen ? (
@@ -117,7 +131,7 @@ export default function Home() {
               ))}
             </Stack>
           ) : (
-            <ImageList id="grid" sx={{ margin: 'auto' }} width="80%" variant="quilted" cols={3} gap={8}>
+            <ImageList id="grid" sx={{ margin: 'auto' }} width="80%" variant="quilted" cols={3} gap={10}>
               {filteredCollections.map((list) => (
                 <Box ref={el => listRefs.current[list.name] = el} key={list.name}>
                   <InvList key={list.name} listName={list.name} />
@@ -167,6 +181,7 @@ export default function Home() {
             </Button>
           </Stack>
         </Stack>
+      </Box>
       </Box>
     </ThemeProvider>
   );

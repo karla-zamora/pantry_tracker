@@ -29,8 +29,6 @@ const style = {
   gap: 3,
 }
 
-//global inventory list for search query purposes
-var allItems = []
 
 export default function InvList({listName}) {
   //State variables:
