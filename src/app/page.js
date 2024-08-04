@@ -1,4 +1,5 @@
 'use client';
+
 import InvList from "./invlist";
 import SideDrawer from "./sidedrawer.js"
 import { useState, useEffect, useRef } from "react";
@@ -11,10 +12,11 @@ import { collection, getDocs, query, setDoc, deleteDoc, doc } from 'firebase/fir
 const theme = createTheme();
 
 export default function Home() {
-  //State variables:
+  // State variables:
   const [collections, setCollection] = useState([]);
   const [listName, setListName] = useState(''); // List to be added
   const [searchQuery, setSearchQuery] = useState(''); // State for search query
+  const [isClient, setIsClient] = useState(false); // State to check if the component is client-side
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm')); // To set breakpoints for smaller screens aka converts grid into stack
   const listRefs = useRef({}); // Reference for lists
 
@@ -32,6 +34,7 @@ export default function Home() {
   useEffect(() => {
     updateCollections();
     console.log("collection updated");
+    setIsClient(true); // Set the client-side state to true
   }, []);
 
   const addCollection = async (name) => {
@@ -74,21 +77,23 @@ export default function Home() {
 
       for (const listItem of collItems.docs) {
         if (listItem.id.toLowerCase().includes(input.toLowerCase())) {
-          const listRef = listRefs.current[coll.name];
-          if (listRef) {
-            listRef.scrollIntoView({ behavior: 'smooth' });
-            return;
+          if (isClient) { // Ensure this runs only on client-side
+            const listRef = listRefs.current[coll.name];
+            if (listRef) {
+              listRef.scrollIntoView({ behavior: 'smooth' });
+              return;
+            }
           }
         }
       }
     }
   };
-  //************************************************************************** */
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box id="outer-page" height={'90vh'} sx={{backgroundColor:'white'}}>
-      <AppBar sx={{ backgroundColor: "#274c77", mb:3}} position="static">
+        <AppBar sx={{ backgroundColor: "#274c77", mb: 3}} position="static">
           <Toolbar>
             <SideDrawer />
             {/* Search Input */}
@@ -102,82 +107,77 @@ export default function Home() {
               sx={{ maxWidth: '80%', margin: 2, backgroundColor: "white" }}
             />
           </Toolbar>
-
         </AppBar>
-      <Box
-        id="whole-page"
-        width="100%"
-        height="90%"
-        display={'flex'}
-        justifyContent={'center'}
-        flexDirection={'column'}
-        alignItems={'center'}
-        gap={2}
-      >
-        
-
-
-        {filteredCollections.length > 3 ? (
-          isSmallScreen ? (
-            <Stack id="thin-stack" sx={{ width: '80vw', maxHeight: '80%' }} overflow={'auto'} direction="column" spacing={2}>
-              {filteredCollections.map((list) => (
-                <Box ref={el => listRefs.current[list.name] = el} key={list.name}>
-                  <InvList id={list.name} key={list.name} listName={list.name} />
-                </Box>
-              ))}
-            </Stack>
+        <Box
+          id="whole-page"
+          width="100%"
+          height="90%"
+          display={'flex'}
+          justifyContent={'center'}
+          flexDirection={'column'}
+          alignItems={'center'}
+          gap={2}
+        >
+          {filteredCollections.length > 3 ? (
+            isSmallScreen ? (
+              <Stack id="thin-stack" sx={{ width: '80vw', maxHeight: '80%' }} overflow={'auto'} direction="column" spacing={2}>
+                {filteredCollections.map((list) => (
+                  <Box ref={el => listRefs.current[list.name] = el} key={list.name}>
+                    <InvList id={list.name} key={list.name} listName={list.name} />
+                  </Box>
+                ))}
+              </Stack>
+            ) : (
+              <ImageList id="grid" sx={{ margin: 'auto' }} width="90%" variant="quilted" cols={3} gap={10}>
+                {filteredCollections.map((list) => (
+                  <Box ref={el => listRefs.current[list.name] = el} key={list.name}>
+                    <InvList key={list.name} listName={list.name} />
+                  </Box>
+                ))}
+              </ImageList>
+            )
           ) : (
-            <ImageList id="grid" sx={{ margin: 'auto' }} width="90%" variant="quilted" cols={3} gap={10}>
+            <Stack id="medium-stack" direction={{ xs: 'column', sm: 'row' }} sx={{ width: '80vw', maxHeight: '80%' }} overflow={'auto'} spacing={{ xs: 1, sm: 2, md: 4 }}>
               {filteredCollections.map((list) => (
                 <Box ref={el => listRefs.current[list.name] = el} key={list.name}>
                   <InvList key={list.name} listName={list.name} />
                 </Box>
               ))}
-            </ImageList>
-          )
-        ) : (
-          <Stack id="medium-stack" direction={{ xs: 'column', sm: 'row' }} sx={{ width: '80vw', maxHeight: '80%' }} overflow={'auto'} spacing={{ xs: 1, sm: 2, md: 4 }}>
-            {filteredCollections.map((list) => (
-              <Box ref={el => listRefs.current[list.name] = el} key={list.name}>
-                <InvList key={list.name} listName={list.name} />
-              </Box>
-            ))}
-          </Stack>
-        )}
-
-        <Stack id="input-form" width="50%" direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-          <TextField
-            id="outlined-basic"
-            label="List name"
-            variant="outlined"
-            fullWidth
-            value={listName}
-            onChange={(e) => setListName(e.target.value)}
-          />
-          <Stack direction={'row'}>
-            <Button
-              sx={{ width: "50%" }}
+            </Stack>
+          )}
+          <Stack id="input-form" width="50%" direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <TextField
+              id="outlined-basic"
+              label="List name"
               variant="outlined"
-              onClick={async () => {
-                await addCollection(listName);
-                setListName('');
-              }}
-            >
-              Add
-            </Button>
-            <Button
-              sx={{ width: "50%" }}
-              variant="outlined"
-              onClick={async () => {
-                await removeCollection(listName);
-                setListName('');
-              }}
-            >
-              Delete
-            </Button>
+              fullWidth
+              value={listName}
+              onChange={(e) => setListName(e.target.value)}
+            />
+            <Stack direction={'row'}>
+              <Button
+                sx={{ width: "50%" }}
+                variant="outlined"
+                onClick={async () => {
+                  await addCollection(listName);
+                  setListName('');
+                }}
+              >
+                Add
+              </Button>
+              <Button
+                sx={{ width: "50%" }}
+                variant="outlined"
+                onClick={async () => {
+                  await removeCollection(listName);
+                  setListName('');
+                }}
+              >
+                Delete
+              </Button>
+            </Stack>
           </Stack>
-        </Stack>
-      </Box>
+        </Box>
       </Box>
     </ThemeProvider>
   );
