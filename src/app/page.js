@@ -87,13 +87,9 @@ export default function Home() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box id="outer-page" height={'90vh'}>
-      <AppBar sx={{ backgroundColor: "gray", mb:3}} position="static">
-          <Toolbar display={'flex'}
-            justifyContent={'center'}
-            flexDirection={'column'}
-            alignItems={'center'}
-            >
+      <Box id="outer-page" height={'90vh'} sx={{backgroundColor:'white'}}>
+      <AppBar sx={{ backgroundColor: "#274c77", mb:3}} position="static">
+          <Toolbar>
             <SideDrawer />
             {/* Search Input */}
             <TextField
@@ -131,7 +127,7 @@ export default function Home() {
               ))}
             </Stack>
           ) : (
-            <ImageList id="grid" sx={{ margin: 'auto' }} width="80%" variant="quilted" cols={3} gap={10}>
+            <ImageList id="grid" sx={{ margin: 'auto' }} width="90%" variant="quilted" cols={3} gap={10}>
               {filteredCollections.map((list) => (
                 <Box ref={el => listRefs.current[list.name] = el} key={list.name}>
                   <InvList key={list.name} listName={list.name} />

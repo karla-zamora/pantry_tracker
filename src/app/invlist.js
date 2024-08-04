@@ -3,7 +3,8 @@
 'use client';
 import { useState, useEffect } from "react";
 import { firestore } from "./firebase";
-import { Box, Stack, Typography, Button, Modal, TextField } from "@mui/material";
+import { Box, Stack, Typography, Button, Modal, TextField, borders, IconButton, Divider } from "@mui/material";
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import {
   collection,
   doc,
@@ -30,7 +31,7 @@ const style = {
 }
 
 
-export default function InvList({listName}) {
+export default function InvList({ listName }) {
   //State variables:
   const [inventory, setInventory] = useState([])
   const [open, setOpen] = useState(false)
@@ -42,13 +43,13 @@ export default function InvList({listName}) {
     const docs = await getDocs(snapshot)
     const inventoryList = []
     docs.forEach((doc) => {
-      if(doc.id != 'placeholder'){
+      if (doc.id != 'placeholder') {
         inventoryList.push({ name: doc.id, ...doc.data() })
       }
     })
     setInventory(inventoryList)
   }
-  
+
   useEffect(() => {
     updateInventory()
   }, [])
@@ -68,7 +69,7 @@ export default function InvList({listName}) {
     }
     await updateInventory()
   }
-  
+
   const removeItem = async (item) => {
     const docRef = doc(collection(firestore, listName), item)
     const docSnap = await getDoc(docRef)
@@ -89,101 +90,136 @@ export default function InvList({listName}) {
   //********************************************************************* */
   return (
     <Box
-    id="stack-item"
-    width="100%"
-    height="100%"
-    display={'flex'}
-    justifyContent={'center'}
-    flexDirection={'column'}
-    alignItems={'center'}
-    gap={2}
-  >
-    <Modal
-      open={open}
-      onClose={handleClose}
-      aria-labelledby="modal-modal-title"
-      aria-describedby="modal-modal-description"
+      id="stack-item"
+      width="100%"
+      height="100%"
+      display={'flex'}
+      justifyContent={'center'}
+      flexDirection={'column'}
+      alignItems={'center'}
+      gap={2}
+      sx={{ borderRadius: '15px' }}
     >
-      <Box sx={style}>
-        <Typography id="modal-modal-title" variant="h6" component="h2">
-          Add Item
-        </Typography>
-        <Stack width="100%" direction={'row'} spacing={2}>
-          <TextField
-            id="outlined-basic"
-            label="Item"
-            variant="outlined"
-            fullWidth
-            value={itemName}
-            onChange={(e) => setItemName(e.target.value)}
-          />
-          <Button
-            variant="outlined"
-            onClick={() => {
-              addItem(itemName)
-              setItemName('')
-              handleClose()
-            }}
+      <Modal
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+      >
+        <Box sx={style}>
+          <Typography id="modal-modal-title" variant="h6" component="h2">
+            Add Item
+          </Typography>
+          <Stack width="100%" direction={'row'} spacing={2}>
+            <TextField
+              id="outlined-basic"
+              label="Item"
+              variant="outlined"
+              fullWidth
+              value={itemName}
+              onChange={(e) => setItemName(e.target.value)}
+            />
+            <Button
+              variant="outlined"
+              onClick={() => {
+                addItem(itemName)
+                setItemName('')
+                handleClose()
+              }}
+            >
+              Add
+            </Button>
+          </Stack>
+        </Box>
+      </Modal>
+
+      <Box
+        id="list"
+        border={'1px solid #6096ba'}
+        width={{ xs: "80%", sm: "25vw" }}
+        sx={{ borderRadius: '15px', backgroundColor: "#e7ecef" }}
+
+        height='25vh'
+      >
+        <Button flexItem sx={{ maxWidth: '100%', minWidth: '100%' }}
+          onClick={() => listName='hi'}
+        >
+          <Box
+            id='bluebox'
+            width="100%"
+            height="20%"
+            bgcolor={'#6096ba'}
+
+            justifyContent={'center'}
+            alignItems={'center'}
+            sx={{ borderRadius: '15px' }}
           >
-            Add
-          </Button>
+            <Stack
+              id="bluebox-stack"
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              divider={<Divider orientation="vertical" flexItem variant="middle" />}
+              sx={{ width: '100%' }}
+            >
+              <Box
+                component="div"
+                sx={{
+                  flexGrow: 1,
+                  textOverflow: 'ellipsis',
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap',
+                  alignItems: 'center'
+                }}
+              >
+                <Typography
+                  id="text"
+                  sx={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}
+                  variant="h4"
+                  color="white"
+                  textAlign={'center'}
+                >
+                  {listName}
+                </Typography>
+              </Box>
+              <IconButton onClick={handleOpen} sx={{ ml: 2 }}>
+                <AddCircleOutlineIcon />
+              </IconButton>
+            </Stack>
+
+          </Box>
+        </Button>
+        <Stack width="100%" height="60%" spacing={2} overflow={'auto'}>
+          {inventory.length != 0 ? inventory.map(({ name, quantity }) => (
+            <Box
+              key={name}
+              width="100%"
+              minHeight="150px"
+              display={'flex'}
+              justifyContent={'space-between'}
+              alignItems={'center'}
+              bgcolor={'#f0f0f0'}
+              paddingX={5}
+            >
+
+              <Typography variant={'h3'} color={'#333'} textAlign={'center'}>
+                {name.charAt(0).toUpperCase() + name.slice(1)}
+              </Typography>
+
+              <Typography color={'#333'} textAlign={'center'}>
+                Quantity: {quantity}
+              </Typography>
+              <Button variant="contained" onClick={() =>
+                removeItem(name)
+              }>
+                Remove
+              </Button>
+            </Box>
+          )) : <Box alignSelf={'center'}>Empty list</Box>}
         </Stack>
       </Box>
-    </Modal>
-    
-    <Button variant="contained" onClick={handleOpen}>
-      Add New Item
-    </Button>
-    <Box 
-      id="list"
-      border={'1px solid #333'}
-      width ={{ xs: "80%", sm: "25vw"}}
 
-      height='25vh'
-    >
-      <Box
-        id='bluebox'
-        width="100%"
-        height="20%"
-        bgcolor={'#ADD8E6'}
-        display={'flex'}
-        justifyContent={'center'}
-        alignItems={'center'}
-      >
-        <Typography variant={'h2'} color={'#333'} textAlign={'center'}>
-          {listName}
-        </Typography>
-      </Box>
-      <Stack width="100%" height="60%" spacing={2} overflow={'auto'}>
-        {inventory.length != 0 ? inventory.map(({name, quantity}) => (
-          <Box
-            key={name}
-            width="100%"
-            minHeight="150px"
-            display={'flex'}
-            justifyContent={'space-between'}
-            alignItems={'center'}
-            bgcolor={'#f0f0f0'}
-            paddingX={5}
-          >
-
-            <Typography variant={'h3'} color={'#333'} textAlign={'center'}>
-              {name.charAt(0).toUpperCase() + name.slice(1)}
-            </Typography>
-
-            <Typography  color={'#333'} textAlign={'center'}>
-              Quantity: {quantity}
-            </Typography>
-            <Button variant="contained" onClick={() => 
-              removeItem(name)
-            }>
-              Remove
-            </Button>
-          </Box>
-        )) : <Box>empty</Box>}
-      </Stack>
     </Box>
-  </Box>
   );
 }
 

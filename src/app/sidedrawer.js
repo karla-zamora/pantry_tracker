@@ -10,6 +10,7 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import InboxIcon from '@mui/icons-material/MoveToInbox';
 import MailIcon from '@mui/icons-material/Mail';
+import { Typography } from '@mui/material';
 
 export default function TemporaryDrawer() {
   const [open, setOpen] = React.useState(false);
@@ -50,7 +51,7 @@ export default function TemporaryDrawer() {
 
   return (
     <div>
-      <Button onClick={toggleDrawer(true)}>MENU</Button>
+      <Button onClick={toggleDrawer(true)} variant="outlined"><Typography color={"white"}>MENU</Typography></Button>
       <Drawer open={open} onClose={toggleDrawer(false)}>
         {DrawerList}
       </Drawer>
