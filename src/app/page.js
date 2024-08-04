@@ -1,15 +1,61 @@
 'use client';
 
 import InvList from "./invlist.js";
-import SideDrawer from "./sidedrawer.js"
+import SideDrawer from "./sidedrawer.js";
 import { useState, useEffect, useRef } from "react";
-import { firestore } from "./firebase.js";
+import { firestore, auth } from "./firebase.js"; 
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Box, Stack, TextField, Button, ImageList, useMediaQuery, AppBar, Container, Toolbar } from "@mui/material";
 import { collection, getDocs, query, setDoc, deleteDoc, doc } from 'firebase/firestore';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth'; 
 
 const theme = createTheme();
+const [user, setUser] = useState(null); // State to track logged-in user
+
+const LoginForm = ({ onLogin }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = async () => {
+    signInWithEmailAndPassword(auth, email, password)
+  .then((userCredential) => {
+    // Signed in 
+    const userTemp = userCredential.user;
+    setUser(userTemp)
+    // ...
+  })
+  .catch((error) => {
+    const errorCode = error.code;
+    const errorMessage = error.message;
+  });
+  };
+
+  return (
+    <Box>
+      <TextField
+        label="Email"
+        variant="outlined"
+        fullWidth
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        sx={{ mb: 2 }}
+      />
+      <TextField
+        label="Password"
+        type="password"
+        variant="outlined"
+        fullWidth
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        sx={{ mb: 2 }}
+      />
+      <Button variant="contained" onClick={handleLogin}>
+        Login
+      </Button>
+    </Box>
+  );
+};
 
 export default function Home() {
   // State variables:
@@ -17,6 +63,7 @@ export default function Home() {
   const [listName, setListName] = useState(''); // List to be added
   const [searchQuery, setSearchQuery] = useState(''); // State for search query
   const [isClient, setIsClient] = useState(false); // State to check if the component is client-side
+  
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm')); // To set breakpoints for smaller screens aka converts grid into stack
   const listRefs = useRef({}); // Reference for lists
 
@@ -35,6 +82,14 @@ export default function Home() {
     updateCollections();
     console.log("collection updated");
     setIsClient(true); // Set the client-side state to true
+
+    // Listen for authentication state changes
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
   const addCollection = async (name) => {
@@ -92,94 +147,103 @@ export default function Home() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box id="outer-page" height={'90vh'} sx={{backgroundColor:'white'}}>
-        <AppBar sx={{ backgroundColor: "#274c77", mb: 3}} position="static">
-          <Toolbar>
-            <SideDrawer />
-            {/* Search Input */}
-            <TextField
-              id="search-input"
-              label="Search Lists"
-              variant="outlined"
-              fullWidth
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              sx={{ maxWidth: '80%', margin: 2, backgroundColor: "white" }}
-            />
-          </Toolbar>
-        </AppBar>
-        <Box
-          id="whole-page"
-          width="100%"
-          height="90%"
-          display={'flex'}
-          justifyContent={'center'}
-          flexDirection={'column'}
-          alignItems={'center'}
-          gap={2}
-        >
-          {filteredCollections.length > 3 ? (
-            isSmallScreen ? (
-              <Stack id="thin-stack" sx={{ width: '80vw', maxHeight: '80%' }} overflow={'auto'} direction="column" spacing={2}>
-                {filteredCollections.map((list) => (
-                  <Box ref={el => listRefs.current[list.name] = el} key={list.name}>
-                    <InvList id={list.name} key={list.name} listName={list.name} />
-                  </Box>
-                ))}
+      <Box id="outer-page" height={'90vh'} sx={{ backgroundColor: 'white' }}>
+        {user ? (
+          <>
+            <AppBar sx={{ backgroundColor: "#274c77", mb: 3 }} position="static">
+              <Toolbar>
+                <SideDrawer />
+                {/* Search Input ! */}
+                <TextField
+                  id="search-input"
+                  label="Search Lists"
+                  variant="outlined"
+                  fullWidth
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  sx={{ maxWidth: '80%', margin: 2, backgroundColor: "white" }}
+                />
+                <Button color="inherit" onClick={() => signOut(auth)}>
+                  Logout
+                </Button>
+              </Toolbar>
+            </AppBar>
+            <Box
+              id="whole-page"
+              width="100%"
+              height="90%"
+              display={'flex'}
+              justifyContent={'center'}
+              flexDirection={'column'}
+              alignItems={'center'}
+              gap={2}
+            >
+              {filteredCollections.length > 3 ? (
+                isSmallScreen ? (
+                  <Stack id="thin-stack" sx={{ width: '80vw', maxHeight: '80%' }} overflow={'auto'} direction="column" spacing={2}>
+                    {filteredCollections.map((list) => (
+                      <Box ref={el => listRefs.current[list.name] = el} key={list.name}>
+                        <InvList id={list.name} key={list.name} listName={list.name} />
+                      </Box>
+                    ))}
+                  </Stack>
+                ) : (
+                  <ImageList id="grid" sx={{ margin: 'auto' }} width="90%" variant="quilted" cols={3} gap={10}>
+                    {filteredCollections.map((list) => (
+                      <Box ref={el => listRefs.current[list.name] = el} key={list.name}>
+                        <InvList key={list.name} listName={list.name} />
+                      </Box>
+                    ))}
+                  </ImageList>
+                )
+              ) : (
+                <Stack id="medium-stack" direction={{ xs: 'column', sm: 'row' }} sx={{ width: '80vw', maxHeight: '80%', display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center' }} overflow={'auto'} spacing={{ xs: 1, sm: 2, md: 4 }}>
+                  {filteredCollections.map((list) => (
+                    <Box ref={el => listRefs.current[list.name] = el} key={list.name}>
+                      <InvList key={list.name} listName={list.name} />
+                    </Box>
+                  ))}
+                </Stack>
+              )}
+              <Stack id="input-form" width="50%" direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                <TextField
+                  id="outlined-basic"
+                  label="List name"
+                  variant="outlined"
+                  fullWidth
+                  value={listName}
+                  onChange={(e) => setListName(e.target.value)}
+                />
+                <Stack direction={'row'}>
+                  <Button
+                    sx={{ width: "50%" }}
+                    variant="outlined"
+                    onClick={async () => {
+                      await addCollection(listName);
+                      setListName('');
+                    }}
+                  >
+                    Add
+                  </Button>
+                  <Button
+                    sx={{ width: "50%" }}
+                    variant="outlined"
+                    onClick={async () => {
+                      await removeCollection(listName);
+                      setListName('');
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </Stack>
               </Stack>
-            ) : (
-              <ImageList id="grid" sx={{ margin: 'auto' }} width="90%" variant="quilted" cols={3} gap={10}>
-                {filteredCollections.map((list) => (
-                  <Box ref={el => listRefs.current[list.name] = el} key={list.name}>
-                    <InvList key={list.name} listName={list.name} />
-                  </Box>
-                ))}
-              </ImageList>
-            )
-          ) : (
-            <Stack id="medium-stack" direction={{ xs: 'column', sm: 'row' }} sx={{ width: '80vw', maxHeight: '80%', display:'flex' , justifyContent:'center',
-            flexDirection:'column',
-            alignItems:'center' }} overflow={'auto'} spacing={{ xs: 1, sm: 2, md: 4 }}>
-              {filteredCollections.map((list) => (
-                <Box ref={el => listRefs.current[list.name] = el} key={list.name}>
-                  <InvList key={list.name} listName={list.name} />
-                </Box>
-              ))}
-            </Stack>
-          )}
-          <Stack id="input-form" width="50%" direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <TextField
-              id="outlined-basic"
-              label="List name"
-              variant="outlined"
-              fullWidth
-              value={listName}
-              onChange={(e) => setListName(e.target.value)}
-            />
-            <Stack direction={'row'}>
-              <Button
-                sx={{ width: "50%" }}
-                variant="outlined"
-                onClick={async () => {
-                  await addCollection(listName);
-                  setListName('');
-                }}
-              >
-                Add
-              </Button>
-              <Button
-                sx={{ width: "50%" }}
-                variant="outlined"
-                onClick={async () => {
-                  await removeCollection(listName);
-                  setListName('');
-                }}
-              >
-                Delete
-              </Button>
-            </Stack>
-          </Stack>
-        </Box>
+            </Box>
+          </>
+        ) : (
+          <Container>
+            <LoginForm onLogin={() => setUser(auth.currentUser)} />
+          </Container>
+        )}
       </Box>
     </ThemeProvider>
   );
