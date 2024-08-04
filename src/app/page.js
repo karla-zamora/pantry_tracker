@@ -1,9 +1,9 @@
 'use client';
 
-import InvList from "./invlist";
+import InvList from "./invlist.js";
 import SideDrawer from "./sidedrawer.js"
 import { useState, useEffect, useRef } from "react";
-import { firestore } from "./firebase";
+import { firestore } from "./firebase.js";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Box, Stack, TextField, Button, ImageList, useMediaQuery, AppBar, Container, Toolbar } from "@mui/material";
@@ -137,7 +137,9 @@ export default function Home() {
               </ImageList>
             )
           ) : (
-            <Stack id="medium-stack" direction={{ xs: 'column', sm: 'row' }} sx={{ width: '80vw', maxHeight: '80%' }} overflow={'auto'} spacing={{ xs: 1, sm: 2, md: 4 }}>
+            <Stack id="medium-stack" direction={{ xs: 'column', sm: 'row' }} sx={{ width: '80vw', maxHeight: '80%', display:'flex' , justifyContent:'center',
+            flexDirection:'column',
+            alignItems:'center' }} overflow={'auto'} spacing={{ xs: 1, sm: 2, md: 4 }}>
               {filteredCollections.map((list) => (
                 <Box ref={el => listRefs.current[list.name] = el} key={list.name}>
                   <InvList key={list.name} listName={list.name} />

@@ -157,7 +157,7 @@ export default function InvList({ listName }) {
               justifyContent="space-between"
               alignItems="center"
               divider={<Divider orientation="vertical" flexItem variant="middle" />}
-              sx={{ width: '100%' }}
+              sx={{ width: '100%' , mb:'3' }}
             >
               <Box
                 component="div"
@@ -171,7 +171,7 @@ export default function InvList({ listName }) {
               >
                 <Typography
                   id="text"
-                  sx={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}
+                  sx={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' , p:'2' }}
                   variant="h4"
                   color="white"
                   textAlign={'center'}
@@ -186,12 +186,12 @@ export default function InvList({ listName }) {
 
           </Box>
 
-        <Stack width="100%" height="60%" spacing={2} overflow={'auto'}>
+        <Stack width="100%" height="72%" spacing={1} overflow={'auto'}>
           {inventory.length != 0 ? inventory.map(({ name, quantity }) => (
             <Box
               key={name}
               width="100%"
-              minHeight="150px"
+              minHeight="25%"
               display={'flex'}
               justifyContent={'space-between'}
               alignItems={'center'}
@@ -199,14 +199,14 @@ export default function InvList({ listName }) {
               paddingX={5}
             >
 
-              <Typography variant={'h3'} color={'#333'} textAlign={'center'}>
+              <Typography variant={'p'} color={'#333'} textAlign={'center'}>
                 {name.charAt(0).toUpperCase() + name.slice(1)}
               </Typography>
 
               <Typography color={'#333'} textAlign={'center'}>
                 Quantity: {quantity}
               </Typography>
-              <Button variant="contained" onClick={() =>
+              <Button variant="contained" sx={{backgroundColor:"#a3cef1"}} onClick={() =>
                 removeItem(name)
               }>
                 Remove
