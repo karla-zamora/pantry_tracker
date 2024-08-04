@@ -141,9 +141,6 @@ export default function InvList({ listName }) {
 
         height='25vh'
       >
-        <Button flexItem sx={{ maxWidth: '100%', minWidth: '100%' }}
-          onClick={() => listName='hi'}
-        >
           <Box
             id='bluebox'
             width="100%"
@@ -188,7 +185,7 @@ export default function InvList({ listName }) {
             </Stack>
 
           </Box>
-        </Button>
+
         <Stack width="100%" height="60%" spacing={2} overflow={'auto'}>
           {inventory.length != 0 ? inventory.map(({ name, quantity }) => (
             <Box
